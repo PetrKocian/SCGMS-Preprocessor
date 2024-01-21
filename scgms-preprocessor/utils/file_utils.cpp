@@ -26,6 +26,13 @@ bool searchInFile(const fs::path& filePath, const std::string& searchStr) {
 	return found;
 }
 
+std::string fileNameWithoutExtension(const fs::path& filePath)
+{
+	fs::path filePathNonConst = filePath;
+	filePathNonConst.replace_extension();
+	return filePathNonConst.string();
+}
+
 std::string modifyDescriptor(const fs::path filePath, std::string origFunctionName, std::string appendToName)
 {
 	std::string functionDeclaration;
@@ -36,9 +43,8 @@ std::string modifyDescriptor(const fs::path filePath, std::string origFunctionNa
 		return "";
 	}
 
-	fs::path filePathNonConst = filePath;
-	filePathNonConst.replace_extension();
-	std::string newPath = filePathNonConst.string() + appendToName + ".cpp";
+
+	std::string newPath = fileNameWithoutExtension(filePath) + appendToName + ".cpp";
 
 
 	// open the new file for writing

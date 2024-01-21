@@ -1,11 +1,26 @@
 #include "utils/file_utils.h"
 
 namespace fs = std::filesystem;
+
+// define source and target paths
+fs::path cwd = fs::current_path();
+const auto src = cwd / "filters";
+const auto target = cwd / "scgms";
+
+
+void abort(std::string error)
+{
+	std::cout << "Aborting, error: " << error << std::endl;
+
+	std::error_code errorCode;
+	if (!fs::remove_all(target, errorCode)) {
+		std::cout << "Removing scgms directory: " << errorCode.message() << std::endl;
+	}
+
+	exit(0);
+}
+
 int main(int argc, char** argv) {
-	// define source and target paths
-	fs::path cwd = fs::current_path();
-	const auto src = cwd / "filters";
-	const auto target = cwd / "scgms";
 
 	// clean scgms directory
 	std::error_code errorCode;
@@ -29,6 +44,18 @@ int main(int argc, char** argv) {
 		}
 	}
 
+	// delete DllMain files
+	for (auto file : fs::recursive_directory_iterator(target))
+	{
+		if (searchInFile(file.path(), "DllMain"))
+		{
+			if (!fs::remove(file.path()))
+			{
+				std::cout << errorCode.message() << std::endl;
+			}
+		}
+	}
+
 	// holds pair of do_create_filter new function name 
 	std::vector<std::string> descriptorFunctionNames;
 
@@ -49,8 +76,22 @@ int main(int argc, char** argv) {
 			if (fs::is_directory(currentDirPath))
 			{
 				folderName = "_" + currentDirPath.filename().string();
-				std::cout << "func declaratin:"<< std::endl << modifyDescriptor(file.path(), "do_create_filter", folderName) << std::endl;
+				std::string declaration = modifyDescriptor(file, "do_create_filter", folderName);
 				descriptorFunctionNames.push_back("do_create_filter" + folderName);
+
+				fs::path headerPath(fileNameWithoutExtension(file.path()) + ".h");
+				if(fs::exists(headerPath))
+				{
+					std::ofstream header(headerPath, std::ios::app);
+					if (header.is_open())
+					{
+						header << std::endl << declaration;
+					}
+				}
+				else
+				{
+					abort("Could not find descriptor header file for:\r\n" + file.path().string());
+				}
 			}
 		}
 	}

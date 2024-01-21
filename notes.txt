@@ -1,0 +1,6 @@
+need to add declaration to descriptor.h
+--> iterate through each filter folder separately??
+
+need to ignore dllmain.cpp
+
+might need to remove unnecessary qualifiers ----> NO! just define them all as empty!
