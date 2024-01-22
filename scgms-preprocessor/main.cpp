@@ -1,24 +1,9 @@
 #include "utils/file_utils.h"
+#include "utils/abort.h"
 
 namespace fs = std::filesystem;
 
-// define source and target paths
-fs::path cwd = fs::current_path();
-const auto src = cwd / "filters";
-const auto target = cwd / "scgms";
 
-
-void abort(std::string error)
-{
-	std::cout << "Aborting, error: " << error << std::endl;
-
-	std::error_code errorCode;
-	if (!fs::remove_all(target, errorCode)) {
-		std::cout << "Removing scgms directory: " << errorCode.message() << std::endl;
-	}
-
-	exit(0);
-}
 
 int main(int argc, char** argv) {
 
@@ -56,44 +41,29 @@ int main(int argc, char** argv) {
 		}
 	}
 
-	// holds pair of do_create_filter new function name 
-	std::vector<std::string> descriptorFunctionNames;
+	// holds new function names 
+	std::vector<std::string> docreateFunctionNames;
+	std::vector<std::string> getdescriptorsFunctionNames;
+
 
 	// modify descriptor source files of filters and save filter folder names
 	std::string folderName = "";
 	for (auto file : fs::recursive_directory_iterator(target))
 	{
+		std::string folderName = "";
 		const std::string fileExtension = file.path().extension().string();
 		if(searchInFile(file, "do_create_filter") && fileExtension == ".cpp")
 		{
-			fs::path parentPath = file.path().parent_path();
-			fs::path currentDirPath = file.path();
-			while (parentPath.filename().string() != "scgms")
-			{
-				currentDirPath = parentPath;
-				parentPath = parentPath.parent_path();
-			}
-			if (fs::is_directory(currentDirPath))
-			{
-				folderName = "_" + currentDirPath.filename().string();
-				std::string declaration = modifyDescriptor(file, "do_create_filter", folderName);
-				descriptorFunctionNames.push_back("do_create_filter" + folderName);
+			folderName = modifyDescriptor(file, "do_create_filter");
+			docreateFunctionNames.push_back("do_create_filter" + folderName);
 
-				fs::path headerPath(fileNameWithoutExtension(file.path()) + ".h");
-				if(fs::exists(headerPath))
-				{
-					std::ofstream header(headerPath, std::ios::app);
-					if (header.is_open())
-					{
-						header << std::endl << declaration;
-					}
-				}
-				else
-				{
-					abort("Could not find descriptor header file for:\r\n" + file.path().string());
-				}
-			}
 		}
+		if (searchInFile(file, "do_get_filter_descriptors") && fileExtension == ".cpp")
+		{
+			folderName = modifyDescriptor(file, "do_get_filter_descriptors");
+			getdescriptorsFunctionNames.push_back("do_get_filter_descriptors" + folderName);
+		}
+		renameFile(file, folderName);
 	}
 
 
