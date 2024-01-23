@@ -1,20 +1,46 @@
 #include "utils/file_utils.h"
 #include "utils/abort.h"
+#include "utils/file_templates.h"
 
-namespace fs = std::filesystem;
+#include <sstream>
 
 
 
 int main(int argc, char** argv) {
 
+	// check if input directory exists
+	if(!fs::exists(src))
+	{
+		fs::create_directory(src);
+		abort("Provide filter and configuration files in input folder");
+	}
+
 	// clean scgms directory
 	std::error_code errorCode;
 	if (!fs::remove_all(target, errorCode)) {
-		std::cout << "Removing scgms directory: "<< errorCode.message() << std::endl;
+		std::cout << "Removing " + target.filename().string() + " directory: "<< errorCode.message() << std::endl;
 	}
 
-	// copy all filter files to scgms directory
-	fs::copy(src, target, fs::copy_options::recursive);
+	// copy all filter files to filters directory
+	fs::create_directories(target / "filters");
+	fs::copy(src, target / "filters" , fs::copy_options::recursive);	
+
+	// copy .ini file contents to string
+	bool foundIni = false;
+	for (auto file : fs::directory_iterator(src))
+	{
+		const std::string fileExtension = file.path().extension().string();
+		if (fileExtension == ".ini")
+		{
+			copyIniFile(file.path());
+			foundIni = true;
+			break;
+		}
+	}
+	if (!foundIni)
+	{
+		std::cout << "Warning: .ini configuration file not provided" << std::endl;
+	}
 
 	// delete any non .cpp .c .h files as they won't be recognized by build tools for embedded targets
 	for (auto file : fs::recursive_directory_iterator(target))
@@ -44,9 +70,9 @@ int main(int argc, char** argv) {
 	// holds new function names 
 	std::vector<std::string> docreateFunctionNames;
 	std::vector<std::string> getdescriptorsFunctionNames;
+	std::vector<fs::path> descriptorFileNames;
 
-
-	// modify descriptor source files of filters and save filter folder names
+	// modify descriptor source files of filters and save new function names
 	std::string folderName = "";
 	for (auto file : fs::recursive_directory_iterator(target))
 	{
@@ -63,150 +89,78 @@ int main(int argc, char** argv) {
 			folderName = modifyDescriptor(file, "do_get_filter_descriptors");
 			getdescriptorsFunctionNames.push_back("do_get_filter_descriptors" + folderName);
 		}
-		renameFile(file, folderName);
+		if (folderName != "")
+		{
+			descriptorFileNames.push_back(file.path());
+			renameFile(file, folderName);
+		}
 	}
 
-
-	// generate combined descriptors source files
-
-
-
-
-
-	return 0;
-
-}
-
-
-
-
-
-
-
-
-/*
-
-
-
-
-
-
-	std::vector<fs::path> filters_paths; 
-
-	for (const auto& entry : fs::directory_iterator(src)) {
-		filters_paths.push_back(entry);
-		std::cout << entry << std::endl;
-	}
-
-
-	std::string includes = "";
-
-	std::string allocation = "void configure(){\r\n"
-							 "scgms::IFilter** terminal_filter = new scgms::IFilter*;\r\n";
-
-	std::string manufacture = "";
-
-	std::string configure = "";
-
-	std::string execute = "void execute(scgms::IDevice_Event * event)\r\n"
-						  "{\r\n"
-						  "(*filter1)->Execute(event);\r\n"
-						  "}";
-
-	int filter_index = 0;
-
-	for (auto guid : guids)
+	// generate combined descriptors header file
+	fs::create_directories(target / "generated");
+	std::ofstream comb_desc_h(target / "generated/combined_descriptors.h");
+	if (!comb_desc_h.is_open())
 	{
-		bool found = false;
-		fs::path current_filter = "";
-		std::wcout << L"Searching " + guid << std::endl;
-		std::string converted_str = converter.to_bytes(guid);
+		abort("Could not open " + target.string() + "/generated/combined_descriptors.h for writing");
+	}
+	comb_desc_h << "#pragma once" << std::endl;
 
-		// find in which folder is the guid located
-		for (const auto& filter_path : filters_paths)
-		{
-			if (searchInFolder(filter_path, converted_str))
-			{
-				std::cout << "found " + converted_str + " in " << filter_path << std::endl;
-				current_filter = filter_path;
-				filter_index++;
-				found = true;
-			}
-		}
-
-		// filter found
-		if (found)
-		{
-			// include filter files
-			for (const auto& entry : fs::recursive_directory_iterator(current_filter)) {
-				if (fs::is_regular_file(entry.path())) {
-					includes.append("#include \"" + entry.path().generic_string() + "\"\r\n"); //change to relative path?
-				}
-			}
-
-			// allocate memory for filter
-			allocation.append("scgms::IFilter** filter" + std::to_string(filter_index) + " = new scgms::IFilter*;\r\n");
-
-			// manufacture filter and configure
-			if (filter_index == 2)//guids.size()) //last filter
-			{
-				manufacture = "Manufacture_Object<" + getFilterObjectName(guid) + ">(filter" + std::to_string(filter_index) + ", *terminal_filter);\r\n" + manufacture;
-				manufacture = "Manufacture_Object<CFilterTerminal>(terminal_filter); \r\n" + manufacture;
-
-
-				configure = "(*filter"+ std::to_string(filter_index) +")->Configure(NULL, error_description);\r\n" + configure;
-				configure = "(*terminal_filter)->Configure(NULL, error_description);\r\n" + configure;
-				configure = "refcnt::wstr_list* error_description{};\r\n" + configure;
-
-
-				//finished
-
-			}
-			else
-			{
-				manufacture = "Manufacture_Object<" + getFilterObjectName(guid) + ">(filter" + std::to_string(filter_index) + ", *filter" + std::to_string(filter_index + 1) + ");\r\n" + manufacture;
-				configure = "(*filter" + std::to_string(filter_index) + ")->Configure(NULL, error_description);\r\n" + configure;
-			}
-		}
-
-
-
-
-
+	// add includes
+	for (auto sourceFile : descriptorFileNames)
+	{
+		sourceFile.replace_extension(".h");
+		std::string include = "#include <scgms/" + sourceFile.lexically_relative(cwd).string() + ">";
+		std::replace(include.begin(), include.end(), '\\', '/');
+		comb_desc_h << include <<std::endl;
 	}
 
-
-	std::string main_file = "";
-
-	main_file.append(includes);
-	main_file.append("\r\n");
-
-
-	main_file.append(allocation);
-	main_file.append("\r\n");
-
-	main_file.append(manufacture);
-	main_file.append("\r\n");
-
-	main_file.append(configure);
-	main_file.append("}\r\n");
-
-	main_file.append(execute);
-	
-
-	fs::path main_path = target / "main.cpp";
-	std::ofstream outputFile(main_path);
+	// add function definitions
+	std::string line;
+	std::istringstream file_template(combined_descriptors_h_template);
+	loadTemplate(comb_desc_h, combined_descriptors_h_template);
+	comb_desc_h.close();
 
 
-	// Check if the file is open
-	if (outputFile.is_open()) {
-		outputFile << main_file;
+	// generate combined descriptors source file
+	std::ofstream comb_desc_c(target / "generated/combined_descriptors.cpp");
+	if (!comb_desc_c.is_open())
+	{
+		abort("Could not open " + target.string() + "/generated/combined_descriptors.c for writing");
 	}
-	
-	std::cout << main_file;
 
-	system("pause");
+	// top of source file
+	loadTemplate(comb_desc_c, comb_desc_c_includes);
+
+	// get_all_descriptors()
+	loadTemplate(comb_desc_c, get_all_descs_begin);
+
+	for (auto functionName : getdescriptorsFunctionNames){
+		comb_desc_c << functionName;
+
+		if (functionName != getdescriptorsFunctionNames.back()){
+			loadTemplate(comb_desc_c, get_all_descs_body);
+		}
+		else{
+			loadTemplate(comb_desc_c, get_all_descs_end);
+		}
+	}
+
+	// get_filter_descriptor_by_id_combined()
+	loadTemplate(comb_desc_c, get_desc_by_id);
+
+	// create_filter_body_combined()
+	loadTemplate(comb_desc_c, create_filt_comb_begin);
+
+	for (auto functionName : docreateFunctionNames){
+		comb_desc_c << functionName;
+
+		if (functionName != docreateFunctionNames.back()){
+			loadTemplate(comb_desc_c, create_filt_comb_body);
+		}
+		else{
+			loadTemplate(comb_desc_c, create_filt_comb_end);
+		}
+	}
+
 	return 0;
 }
-
-*/

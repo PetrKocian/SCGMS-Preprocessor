@@ -1,10 +1,11 @@
 #include "file_utils.h"
 #include "abort.h"
+#include <sstream>
 
 // define source and target paths
 const fs::path cwd = fs::current_path();
-const fs::path src = cwd / "filters";
-const fs::path target = cwd / "scgms";
+const fs::path src = cwd / "input";
+const fs::path target = cwd / "output";
 
 
 
@@ -96,12 +97,39 @@ std::string insertIntoFile(const fs::path filePath, std::string appendAfter, std
 	return functionDeclaration;
 }
 
+void copyIniFile(const fs::path filePath)
+{
+	std::ifstream file(filePath);
+	if (!file.is_open()) {
+		std::cerr << "Error opening .ini file: " << filePath.string() << std::endl;
+		return;
+	}
+
+	std::ofstream iniFile(target / "config.h");
+	iniFile << "#pragma once" << std::endl;
+	iniFile << "const char* config_data =" << std::endl;
+
+	std::string line;
+	while (std::getline(file, line)) {
+		if (line[0] == ';')
+		{
+			continue;
+		}
+		iniFile << '"' << line << "\\r\\n" << '"' << std::endl;
+	}
+
+	iniFile << ';';
+
+	iniFile.close();
+	file.close();
+}
+
 std::string modifyDescriptor(fs::directory_entry& file, std::string searchString)
 {
 	std::string folderName = "";
 	fs::path parentPath = file.path().parent_path();
 	fs::path currentDirPath = file.path();
-	while (parentPath.filename().string() != "scgms")
+	while (parentPath.filename().string() != target.filename().string())
 	{
 		currentDirPath = parentPath;
 		parentPath = parentPath.parent_path();
@@ -140,4 +168,15 @@ bool searchInFolder(const fs::path & folderPath, const std::string & searchStr) 
 		}
 	}
 	return found;
+}
+
+void loadTemplate(std::ofstream& file, std::string template_str)
+{
+	std::string line;
+	std::istringstream file_template(template_str);
+	while (std::getline(file_template, line))
+	{
+		file << line;
+	}
+
 }

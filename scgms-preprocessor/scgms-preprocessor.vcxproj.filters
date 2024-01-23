@@ -24,12 +24,18 @@
     <ClCompile Include="utils\abort.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="utils\file_templates.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils\file_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="utils\abort.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\file_templates.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
