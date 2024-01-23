@@ -22,9 +22,13 @@ int main(int argc, char** argv) {
 	}
 
 	// copy all filter files to filters directory
-	fs::create_directories(target / "filters");
-	fs::copy(src, target / "filters" , fs::copy_options::recursive);	
-
+	try {
+		fs::create_directories(target / "filters");
+		fs::copy(src, target / "filters", fs::copy_options::recursive);
+	}
+	catch(...){
+		abort("Failed to copy filter files");
+	}
 	// copy .ini file contents to string
 	bool foundIni = false;
 	for (auto file : fs::directory_iterator(src))
@@ -66,6 +70,9 @@ int main(int argc, char** argv) {
 			}
 		}
 	}
+
+	// remove empty directories
+	removeEmptyDirectories(target);
 
 	// holds new function names 
 	std::vector<std::string> docreateFunctionNames;
@@ -109,7 +116,7 @@ int main(int argc, char** argv) {
 	for (auto sourceFile : descriptorFileNames)
 	{
 		sourceFile.replace_extension(".h");
-		std::string include = "#include <scgms/" + sourceFile.lexically_relative(cwd).string() + ">";
+		std::string include = "#include <scgms/" + sourceFile.lexically_relative(target).string() + ">";
 		std::replace(include.begin(), include.end(), '\\', '/');
 		comb_desc_h << include <<std::endl;
 	}

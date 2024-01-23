@@ -103,7 +103,7 @@ HRESULT IfaceCalling CModify_Filter::Do_Execute(scgms::UDevice_Event event) {
 		event.level() = 7;
 		return mOutput.Send(event);
 	}
-	else if (event.level < 15.0)
+	else if (event.level() < 15.0)
 	{
 		return mOutput.Send(event);
 	}

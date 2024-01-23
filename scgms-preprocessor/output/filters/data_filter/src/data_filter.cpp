@@ -118,7 +118,7 @@ HRESULT IfaceCalling CData_Filter::Do_Execute(scgms::UDevice_Event event) {
 #if defined(FREERTOS) || defined(ESP32)
 	vTaskDelay(200);
 #elif defined(WASM)
-	Sleep(2);
+	sleep(2);
 #endif
 	}
 	return rc;

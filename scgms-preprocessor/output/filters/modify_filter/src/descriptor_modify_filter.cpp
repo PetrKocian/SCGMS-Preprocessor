@@ -101,12 +101,12 @@ const std::array<scgms::TFilter_Descriptor, 1> filter_descriptions = { { modify_
  * Filter library interface implementations
  */
 
-extern "C" HRESULT IfaceCalling do_get_filter_descriptors_filters(scgms::TFilter_Descriptor **begin, scgms::TFilter_Descriptor **end) {
+extern "C" HRESULT IfaceCalling do_get_filter_descriptors_modify_filter(scgms::TFilter_Descriptor **begin, scgms::TFilter_Descriptor **end) {
 
 	return do_get_descriptors(filter_descriptions, begin, end);
 }
 
-extern "C" HRESULT IfaceCalling do_create_filter_filters(const GUID *id, scgms::IFilter *output, scgms::IFilter **filter) {
+extern "C" HRESULT IfaceCalling do_create_filter_modify_filter(const GUID *id, scgms::IFilter *output, scgms::IFilter **filter) {
 
 	if (*id == modify_filter::descriptor.id) {
 		return Manufacture_Object<CModify_Filter>(filter, output);

@@ -1,3 +1,5 @@
+
+#include <rtl/FilterLib.h> // GENERATED
 /**
  * SmartCGMS - continuous glucose monitoring and controlling framework
  * https://diabetes.zcu.cz/
@@ -46,5 +48,5 @@ namespace print_filter {
 	extern const wchar_t* rsExample_Config_Double;
 }
 
-extern "C" HRESULT IfaceCalling do_create_filter_filters(const GUID *id, scgms::IFilter *output, scgms::IFilter **filter) ;
-extern "C" HRESULT IfaceCalling do_get_filter_descriptors_filters(scgms::TFilter_Descriptor **begin, scgms::TFilter_Descriptor **end) ;
+extern "C" HRESULT IfaceCalling do_create_filter_print_filter(const GUID *id, scgms::IFilter *output, scgms::IFilter **filter) ;
+extern "C" HRESULT IfaceCalling do_get_filter_descriptors_print_filter(scgms::TFilter_Descriptor **begin, scgms::TFilter_Descriptor **end) ;

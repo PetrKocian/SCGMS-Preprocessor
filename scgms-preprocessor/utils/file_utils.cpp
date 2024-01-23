@@ -7,7 +7,23 @@ const fs::path cwd = fs::current_path();
 const fs::path src = cwd / "input";
 const fs::path target = cwd / "output";
 
+void removeEmptyDirectories(const fs::path& dir) {
+	if (!fs::exists(dir) || !fs::is_directory(dir)) {
+		std::cerr << "Invalid directory: " << dir << std::endl;
+		return;
+	}
 
+	for (const auto& entry : fs::directory_iterator(dir)) {
+		if (fs::is_directory(entry)) {
+			removeEmptyDirectories(entry.path());
+		}
+	}
+
+	// Check if the current directory is empty and remove it
+	if (fs::is_empty(dir)) {
+		fs::remove(dir);
+	}
+}
 
 bool searchInFile(const fs::path& filePath, const std::string& searchStr) {
 	bool found = false;
@@ -74,12 +90,14 @@ std::string insertIntoFile(const fs::path filePath, std::string appendAfter, std
 
 	// copy old file into new file, line by line
 	std::string line;
+	bool inserted = false;
 	while (std::getline(file, line)) {
 		auto pos = line.find(appendAfter);
-		if (pos != std::string::npos) {
+		if (pos != std::string::npos && !inserted) {
 			// modify name of the function 
 			line.insert(pos + appendAfter.length(), appendString);
 			functionDeclaration = line;
+			inserted = true;
 		}
 		newFile << line << std::endl;
 	}
@@ -129,7 +147,7 @@ std::string modifyDescriptor(fs::directory_entry& file, std::string searchString
 	std::string folderName = "";
 	fs::path parentPath = file.path().parent_path();
 	fs::path currentDirPath = file.path();
-	while (parentPath.filename().string() != target.filename().string())
+	while (parentPath.filename().string() != "filters")
 	{
 		currentDirPath = parentPath;
 		parentPath = parentPath.parent_path();
@@ -142,6 +160,10 @@ std::string modifyDescriptor(fs::directory_entry& file, std::string searchString
 		fs::path headerPath(fileNameWithoutExtension(file.path()) + ".h");
 		if (fs::exists(headerPath))
 		{
+			if (!searchInFile(headerPath, "rtl/FilterLib.h"))
+			{
+				insertIntoFile(headerPath, "", "\r\n#include <rtl/FilterLib.h> // GENERATED\r\n");
+			}
 			std::ofstream header(headerPath, std::ios::app);
 			if (header.is_open())
 			{

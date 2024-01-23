@@ -109,7 +109,7 @@ extern "C" HRESULT IfaceCalling do_get_filter_descriptors(scgms::TFilter_Descrip
 extern "C" HRESULT IfaceCalling do_create_filter(const GUID *id, scgms::IFilter *output, scgms::IFilter **filter) {
 
 	if (*id == data_filter::descriptor.id) {
-		return Manufacture_Object<CExample_Filter>(filter, output);
+		return Manufacture_Object<CData_Filter>(filter, output);
 	}
 
 	return E_NOTIMPL;

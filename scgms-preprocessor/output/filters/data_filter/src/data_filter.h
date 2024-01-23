@@ -38,7 +38,6 @@
 
 #include <rtl/FilterLib.h>
 #include <rtl/referencedImpl.h>
-#include <rtl/UILib.h>
 
 #pragma warning( push )
 #pragma warning( disable : 4250 ) // C4250 - 'class1' : inherits 'class2::member' via dominance

@@ -35,7 +35,7 @@
  */
 
 #include "descriptor.h"
-#include "data_filter.h"
+#include "print_filter.h"
 
 #include <iface/DeviceIface.h>
 #include <iface/FilterIface.h>
@@ -50,7 +50,7 @@
  * Example filter descriptor block
  */
 
-namespace data_filter {
+namespace print_filter {
 
 	constexpr size_t param_count = 2;
 
@@ -95,21 +95,21 @@ namespace data_filter {
  * Array of available filter descriptors
  */
 
-const std::array<scgms::TFilter_Descriptor, 1> filter_descriptions = { { data_filter::descriptor } };
+const std::array<scgms::TFilter_Descriptor, 1> filter_descriptions = { { print_filter::descriptor } };
 
 /*
  * Filter library interface implementations
  */
 
-extern "C" HRESULT IfaceCalling do_get_filter_descriptors_filters(scgms::TFilter_Descriptor **begin, scgms::TFilter_Descriptor **end) {
+extern "C" HRESULT IfaceCalling do_get_filter_descriptors_print_filter(scgms::TFilter_Descriptor **begin, scgms::TFilter_Descriptor **end) {
 
 	return do_get_descriptors(filter_descriptions, begin, end);
 }
 
-extern "C" HRESULT IfaceCalling do_create_filter_filters(const GUID *id, scgms::IFilter *output, scgms::IFilter **filter) {
+extern "C" HRESULT IfaceCalling do_create_filter_print_filter(const GUID *id, scgms::IFilter *output, scgms::IFilter **filter) {
 
-	if (*id == data_filter::descriptor.id) {
-		return Manufacture_Object<CExample_Filter>(filter, output);
+	if (*id == print_filter::descriptor.id) {
+		return Manufacture_Object<CPrint_Filter>(filter, output);
 	}
 
 	return E_NOTIMPL;
