@@ -169,5 +169,7 @@ int main(int argc, char** argv) {
 		}
 	}
 
+	std::cout << "Files generated successfully" << std::endl;
+	system("pause");
 	return 0;
 }

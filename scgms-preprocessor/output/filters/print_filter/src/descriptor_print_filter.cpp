@@ -77,7 +77,7 @@ namespace print_filter {
 		L"This is just an example of possible numeric filter parameter"
 	};
 
-	const wchar_t* filter_name = L"Example filter";
+	const wchar_t* filter_name = L"Print filter";
 
 	const scgms::TFilter_Descriptor descriptor = {
 		id,
