@@ -124,7 +124,7 @@ void copyIniFile(const fs::path filePath)
 	}
 
 	// create config.h where the configuration.ini will be located as a string
-	std::ofstream iniFile(target / "config.h");
+	std::ofstream iniFile(target / "filters/config.h");
 	iniFile << "#pragma once" << std::endl;
 	iniFile << "const char* config_data =" << std::endl;
 

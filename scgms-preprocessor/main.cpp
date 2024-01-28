@@ -104,11 +104,11 @@ int main(int argc, char** argv) {
 	}
 
 	// generate combined descriptors header file
-	fs::create_directories(target / "generated");
-	std::ofstream comb_desc_h(target / "generated/combined_descriptors.h");
+	fs::create_directories(target / "filters/generated");
+	std::ofstream comb_desc_h(target / "filters/generated/combined_descriptors.h");
 	if (!comb_desc_h.is_open())
 	{
-		abort("Could not open " + target.string() + "/generated/combined_descriptors.h for writing");
+		abort("Could not open " + target.string() + "/filters/generated/combined_descriptors.h for writing");
 	}
 	comb_desc_h << "#pragma once" << std::endl;
 
@@ -116,7 +116,7 @@ int main(int argc, char** argv) {
 	for (auto sourceFile : descriptorFileNames)
 	{
 		sourceFile.replace_extension(".h");
-		std::string include = "#include <scgms/" + sourceFile.lexically_relative(target).string() + ">";
+		std::string include = "#include <" + sourceFile.lexically_relative(target).string() + ">";
 		std::replace(include.begin(), include.end(), '\\', '/');
 		comb_desc_h << include <<std::endl;
 	}
@@ -129,10 +129,10 @@ int main(int argc, char** argv) {
 
 
 	// generate combined descriptors source file
-	std::ofstream comb_desc_c(target / "generated/combined_descriptors.cpp");
+	std::ofstream comb_desc_c(target / "filters/generated/combined_descriptors.cpp");
 	if (!comb_desc_c.is_open())
 	{
-		abort("Could not open " + target.string() + "/generated/combined_descriptors.c for writing");
+		abort("Could not open " + target.string() + "/filters/generated/combined_descriptors.c for writing");
 	}
 
 	// top of source file
